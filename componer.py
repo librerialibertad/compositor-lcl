@@ -13,7 +13,7 @@ import io
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-from activos import ICONO_WA_B64, LOGO_LCL_B64
+from activos import ICONO_WA_B64, cargar_logo
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 FUENTE_TITULO = os.path.join(AQUI, "fonts", "Anton-Regular.ttf")
@@ -21,7 +21,7 @@ FUENTE_TEXTO = os.path.join(AQUI, "fonts", "Montserrat.ttf")
 
 
 def logo_por_defecto():
-    return Image.open(io.BytesIO(base64.b64decode(LOGO_LCL_B64)))
+    return cargar_logo()
 
 LADO = 1080          # lienzo cuadrado
 MARGEN = 40          # margen seguro (lados y abajo)
