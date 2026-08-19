@@ -67,19 +67,27 @@ def _partir_lineas(draw, texto, fuente, ancho_max):
 def _mapa_zona_libre(base, bloque=20):
     """Devuelve, por cada banda horizontal de la imagen, la coordenada X donde empieza
     el sujeto (persona/libro). Se apoya en que el fondo va desenfocado y el sujeto en foco:
-    el sujeto tiene mucha más energía de bordes. Si una banda no tiene sujeto, devuelve None.
-    Es 100% determinista, sin modelos ni dependencias nuevas."""
-    import numpy as np
-    g = np.asarray(base.convert("L").filter(ImageFilter.GaussianBlur(1)), dtype=float)
-    energia = np.abs(np.diff(g, axis=1, prepend=g[:, :1])) + np.abs(np.diff(g, axis=0, prepend=g[:1, :]))
+    el sujeto tiene mucha más energía de bordes. 100% Pillow, sin dependencias nuevas."""
     n = LADO // bloque
-    h = energia[:n * bloque, :n * bloque].reshape(n, bloque, n, bloque).mean(axis=(1, 3))
-    umbral = float(np.percentile(h, 72))
+    gris = base.convert("L").filter(ImageFilter.GaussianBlur(1))
+    bordes = gris.filter(ImageFilter.FIND_EDGES)
+    mini = bordes.resize((n, n), Image.BOX)      # BOX = promedio por bloque
+    px = list(mini.getdata())
+    # FIND_EDGES siempre marca el marco del lienzo: se anula el anillo exterior
+    # o el detector cree que hay sujeto en la fila 0 y desperdicia la tolerancia del pelo.
+    for c in range(n):
+        px[c] = 0
+        px[(n - 1) * n + c] = 0
+    for r in range(n):
+        px[r * n] = 0
+        px[r * n + n - 1] = 0
+    ordenados = sorted(px)
+    umbral = ordenados[min(len(ordenados) - 1, int(len(ordenados) * 0.72))]
     mapa = []
     for r in range(n):
-        fila = h[r]
+        fila = px[r * n:(r + 1) * n]
         borde = None
-        for c in range(len(fila) - 2):                      # 3 bloques seguidos = sujeto real, no ruido
+        for c in range(len(fila) - 2):           # 3 bloques seguidos = sujeto real, no ruido
             if fila[c] > umbral and fila[c + 1] > umbral and fila[c + 2] > umbral:
                 borde = c * bloque
                 break
