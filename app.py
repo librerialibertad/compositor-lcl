@@ -8,6 +8,7 @@ POST /componer   (JSON)
   "logo_b64":    "<PNG en base64>",           # opcional: si falta usa assets/logo_lcl_blanco.png
   "portada_b64": "<imagen en base64>",        # opcional: solo para el color del CTA
   "titulo":   "DIOSES QUE FALLAN",
+  "subtitulo":"RV60",                         # opcional: segunda fila corta (versión de Biblia, etc.)
   "autor":    "Timothy Keller",               # puede ir vacío (Biblias, sopas de letras...)
   "precio":   "Q150.00",
   "whatsapp": "5700-4402",
@@ -35,6 +36,7 @@ class Peticion(BaseModel):
     logo_b64: str | None = None
     portada_b64: str | None = None
     titulo: str
+    subtitulo: str = ""
     autor: str = ""
     precio: str
     whatsapp: str = "5700-4402"
@@ -69,7 +71,8 @@ def endpoint_componer(p: Peticion):
         except Exception:
             portada = None  # el color de acento usa el valor por defecto
 
-    final = componer(escena, logo, portada, p.titulo, p.autor, p.precio, p.whatsapp, p.cta)
+    final = componer(escena, logo, portada, p.titulo, p.autor, p.precio, p.whatsapp, p.cta,
+                      subtitulo=p.subtitulo)
     buf = io.BytesIO()
     final.save(buf, format="PNG")
     return {"imagen_b64": base64.b64encode(buf.getvalue()).decode()}
