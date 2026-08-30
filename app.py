@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from PIL import Image
 
 from componer import componer, logo_por_defecto
+from reel import generar_reel, VOZ_DEFECTO
 
 app = FastAPI(title="Compositor LCL", version="1.0")
 
@@ -76,3 +77,30 @@ def endpoint_componer(p: Peticion):
     buf = io.BytesIO()
     final.save(buf, format="PNG")
     return {"imagen_b64": base64.b64encode(buf.getvalue()).decode()}
+
+
+class PeticionReel(BaseModel):
+    portada_b64: str
+    guion: str                      # lineas separadas por "\n": una por cada "beat" narrado
+    whatsapp: str = "5700-4402"
+    sitio: str = "guatelibros.com"
+    voz: str = VOZ_DEFECTO
+
+
+@app.post("/reel")
+def endpoint_reel(p: PeticionReel):
+    dato = p.portada_b64
+    if "," in dato[:80]:
+        dato = dato.split(",", 1)[1]
+    try:
+        portada_bytes = base64.b64decode(dato)
+    except Exception:
+        raise HTTPException(400, "portada_b64 no es una imagen valida")
+    lineas = [l.strip() for l in p.guion.split("\n") if l.strip()]
+    if not lineas:
+        raise HTTPException(400, "guion vacio: manda al menos una linea")
+    try:
+        video_bytes, duracion = generar_reel(portada_bytes, lineas, p.whatsapp, p.sitio, p.voz)
+    except Exception as e:
+        raise HTTPException(500, f"error generando el reel: {e}")
+    return {"video_b64": base64.b64encode(video_bytes).decode(), "duracion_seg": round(duracion, 1)}
