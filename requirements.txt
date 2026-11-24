@@ -3,4 +3,4 @@ uvicorn==0.32.*
 pillow==11.*
 pydantic==2.*
 cairosvg==2.*
-edge-tts==7.*
+edge-tts>=7.3.1,<8
